@@ -437,8 +437,7 @@ def create_history_blueprint():
             error_msg = str(e)
             return jsonify({
                 "success": False,
-                "error": f"清理孤立目录失败。
-错误详情: {error_msg}"
+                "error": f"清理孤立目录失败。错误详情: {error_msg}"
             }), 500
 
     # ==================== 下载功能 ====================
