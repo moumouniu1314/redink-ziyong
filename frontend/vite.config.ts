@@ -16,6 +16,7 @@ export default defineConfig({
         target: 'http://localhost:12398',
         changeOrigin: true
       }
-    }
+    },
+    allowedHosts: true
   }
 })
