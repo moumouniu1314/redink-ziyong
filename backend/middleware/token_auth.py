@@ -18,6 +18,7 @@ AUTH_WHITELIST = [
     '/api/health',
     '/api/auth/validate',
     '/api/images/',  # 图片路由保持公开（<img> 标签无法携带 Authorization header）
+    '/api/history/',  # 历史记录下载路由（浏览器直接打开无法携带 header）
 ]
 
 
