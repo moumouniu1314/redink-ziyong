@@ -195,6 +195,23 @@
     </form>
 </div>
 
+<div class="card">
+    <h2>系统维护</h2>
+    <p style="color: #666; margin-bottom: 16px;">清理无效数据，释放存储空间</p>
+
+    <div class="maintenance-item">
+        <div class="maintenance-info">
+            <h3>清理孤立目录</h3>
+            <p>删除历史记录后，对应的图片文件夹可能未被清理。点击此按钮可清理这些无效目录。</p>
+        </div>
+        <button type="button" class="btn btn-warning" id="cleanupBtn" onclick="cleanupOrphanDirs()">
+            清理孤立目录
+        </button>
+    </div>
+
+    <div id="cleanupResult" style="display: none; margin-top: 16px; padding: 12px; border-radius: 6px;"></div>
+</div>
+
 <style>
     .form-select {
         width: 100%;
@@ -242,5 +259,86 @@
         margin-right: 8px;
     }
     hr { margin: 24px 0; }
+    .maintenance-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f8f9fa;
+        border: 1px solid #eee;
+        border-radius: 8px;
+    }
+    .maintenance-info h3 {
+        font-size: 14px;
+        margin: 0 0 4px 0;
+        color: #333;
+    }
+    .maintenance-info p {
+        font-size: 12px;
+        color: #666;
+        margin: 0;
+    }
+    .btn-warning {
+        background: #f39c12;
+        color: white;
+        white-space: nowrap;
+    }
+    .btn-warning:hover {
+        background: #e67e22;
+    }
+    .btn-warning:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+    }
 </style>
+
+<script>
+async function cleanupOrphanDirs() {
+    const btn = document.getElementById('cleanupBtn');
+    const resultDiv = document.getElementById('cleanupResult');
+
+    btn.disabled = true;
+    btn.textContent = '清理中...';
+    resultDiv.style.display = 'none';
+
+    try {
+        const response = await fetch('/admin/cleanup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.style.background = '#d4edda';
+            resultDiv.style.color = '#155724';
+            resultDiv.style.border = '1px solid #c3e6cb';
+
+            if (data.deleted_count > 0) {
+                resultDiv.innerHTML = `
+                    <strong>清理完成</strong><br>
+                    已删除 ${data.deleted_count} 个孤立目录<br>
+                    释放空间: ${data.freed_space_mb} MB
+                `;
+            } else {
+                resultDiv.innerHTML = '<strong>无需清理</strong><br>没有发现孤立目录';
+            }
+        } else {
+            resultDiv.style.background = '#f8d7da';
+            resultDiv.style.color = '#721c24';
+            resultDiv.style.border = '1px solid #f5c6cb';
+            resultDiv.innerHTML = `<strong>清理失败</strong><br>${data.error || '未知错误'}`;
+        }
+    } catch (err) {
+        resultDiv.style.background = '#f8d7da';
+        resultDiv.style.color = '#721c24';
+        resultDiv.style.border = '1px solid #f5c6cb';
+        resultDiv.innerHTML = `<strong>请求失败</strong><br>${err.message}`;
+    }
+
+    resultDiv.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '清理孤立目录';
+}
+</script>
 {% endblock %}

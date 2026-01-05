@@ -477,3 +477,24 @@ def delete_image_provider(name):
         flash(f'删除失败: {str(e)}', 'error')
 
     return redirect(url_for('admin.config'))
+
+
+# ==================== 系统维护 ====================
+
+@admin_bp.route('/cleanup', methods=['POST'])
+@admin_required
+def cleanup_orphan_directories():
+    """清理孤立的历史记录目录"""
+    try:
+        from backend.services.history import get_history_service
+        history_service = get_history_service()
+        result = history_service.cleanup_orphan_directories()
+        return jsonify({
+            'success': True,
+            'deleted_count': result.get('deleted_count', 0),
+            'freed_space_mb': result.get('freed_space_mb', 0),
+            'deleted_dirs': result.get('deleted_dirs', [])
+        })
+    except Exception as e:
+        logger.error(f"清理孤立目录失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

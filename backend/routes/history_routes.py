@@ -413,6 +413,34 @@ def create_history_blueprint():
                 "error": f"扫描所有任务失败。\n错误详情: {error_msg}"
             }), 500
 
+    @history_bp.route('/history/cleanup', methods=['POST'])
+    def cleanup_orphan_directories():
+        """
+        清理孤立的任务目录（没有关联历史记录的图片目录）
+
+        返回：
+        - success: 是否成功
+        - deleted: 删除的目录数
+        - freed_mb: 释放的空间（MB）
+        - deleted_dirs: 删除的目录列表
+        """
+        try:
+            history_service = get_history_service()
+            result = history_service.cleanup_orphan_directories()
+
+            if not result.get("success"):
+                return jsonify(result), 500
+
+            return jsonify(result), 200
+
+        except Exception as e:
+            error_msg = str(e)
+            return jsonify({
+                "success": False,
+                "error": f"清理孤立目录失败。
+错误详情: {error_msg}"
+            }), 500
+
     # ==================== 下载功能 ====================
 
     @history_bp.route('/history/<record_id>/download', methods=['GET'])

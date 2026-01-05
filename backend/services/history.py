@@ -597,6 +597,91 @@ class HistoryService:
                 "error": f"扫描所有任务失败: {str(e)}"
             }
 
+    def cleanup_orphan_directories(self) -> Dict:
+        """
+        清理孤立的任务目录（没有关联历史记录的图片目录）
+
+        Returns:
+            Dict: 包含清理结果
+                - success: 是否成功
+                - deleted: 删除的目录数
+                - freed_bytes: 释放的空间（字节）
+                - deleted_dirs: 删除的目录列表
+                - error: 错误信息（失败时）
+        """
+        import shutil
+
+        if not os.path.exists(self.history_dir):
+            return {
+                "success": False,
+                "error": "历史记录目录不存在"
+            }
+
+        try:
+            # 获取所有有效的 task_id
+            index = self._load_index()
+            valid_task_ids = set()
+            for record in index.get("records", []):
+                task_id = record.get("task_id")
+                if task_id:
+                    valid_task_ids.add(task_id)
+
+            # 同时检查记录文件中的 task_id
+            for item in os.listdir(self.history_dir):
+                if item.endswith(".json") and item != "index.json":
+                    record_path = os.path.join(self.history_dir, item)
+                    try:
+                        with open(record_path, "r", encoding="utf-8") as f:
+                            record = json.load(f)
+                            if record.get("images") and record["images"].get("task_id"):
+                                valid_task_ids.add(record["images"]["task_id"])
+                    except Exception:
+                        pass
+
+            deleted_count = 0
+            freed_bytes = 0
+            deleted_dirs = []
+
+            # 遍历目录，删除孤立的任务目录
+            for item in os.listdir(self.history_dir):
+                item_path = os.path.join(self.history_dir, item)
+
+                # 只处理目录（跳过 JSON 文件）
+                if not os.path.isdir(item_path):
+                    continue
+
+                # 如果目录名不在有效 task_id 列表中，则删除
+                if item not in valid_task_ids:
+                    # 计算目录大小
+                    dir_size = 0
+                    for dirpath, dirnames, filenames in os.walk(item_path):
+                        for f in filenames:
+                            fp = os.path.join(dirpath, f)
+                            dir_size += os.path.getsize(fp)
+
+                    try:
+                        shutil.rmtree(item_path)
+                        deleted_count += 1
+                        freed_bytes += dir_size
+                        deleted_dirs.append(item)
+                        print(f"已删除孤立目录: {item} ({dir_size / 1024:.1f} KB)")
+                    except Exception as e:
+                        print(f"删除目录失败: {item}, {e}")
+
+            return {
+                "success": True,
+                "deleted": deleted_count,
+                "freed_bytes": freed_bytes,
+                "freed_mb": round(freed_bytes / 1024 / 1024, 2),
+                "deleted_dirs": deleted_dirs
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"清理孤立目录失败: {str(e)}"
+            }
+
 
 _service_instance = None
 
