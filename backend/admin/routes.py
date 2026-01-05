@@ -227,6 +227,12 @@ def _clear_config_cache():
         Config._text_providers_config = None
     except Exception:
         pass
+    # 重置图片服务实例，使新配置生效
+    try:
+        from backend.services.image import reset_image_service
+        reset_image_service()
+    except Exception:
+        pass
 
 
 @admin_bp.route('/config')
@@ -317,6 +323,7 @@ def save_image_config():
                 'model': request.form.get(f'model_{name}', ''),
                 'api_key': request.form.get(f'api_key_{name}', ''),
                 'base_url': request.form.get(f'base_url_{name}', ''),
+                'endpoint_type': request.form.get(f'endpoint_type_{name}', ''),
                 'high_concurrency': f'high_concurrency_{name}' in request.form
             }
             # API Key 为空时保留原有
@@ -325,6 +332,7 @@ def save_image_config():
             # 移除空的 base_url
             if not new_providers[name]['base_url']:
                 del new_providers[name]['base_url']
+            # endpoint_type 保留空字符串（表示不添加路径后缀）
 
         config = {
             'active_provider': active_provider,
@@ -428,6 +436,9 @@ def add_image_provider():
         base_url = request.form.get('base_url', '').strip()
         if base_url:
             provider['base_url'] = base_url
+        endpoint_type = request.form.get('endpoint_type', '').strip()
+        if endpoint_type:
+            provider['endpoint_type'] = endpoint_type
 
         if 'providers' not in config:
             config['providers'] = {}

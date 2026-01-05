@@ -133,6 +133,10 @@
                 <input type="text" name="base_url_{{ name }}" value="{{ provider.base_url or '' }}" placeholder="https://api.openai.com/v1">
             </div>
             <div class="form-group">
+                <label>端点路径（可选，仅图片 API 类型）</label>
+                <input type="text" name="endpoint_type_{{ name }}" value="{{ provider.endpoint_type or '' }}" placeholder="默认: /v1/images/generations，留空则不添加路径">
+            </div>
+            <div class="form-group">
                 <label>
                     <input type="checkbox" name="high_concurrency_{{ name }}" {% if provider.high_concurrency %}checked{% endif %}>
                     启用高并发模式（需要 API 支持）
@@ -176,6 +180,10 @@
         <div class="form-group">
             <label>Base URL（可选）</label>
             <input type="text" name="base_url" placeholder="https://api.openai.com/v1">
+        </div>
+        <div class="form-group">
+            <label>端点路径（可选，仅图片 API 类型）</label>
+            <input type="text" name="endpoint_type" placeholder="默认: /v1/images/generations，留空则不添加路径">
         </div>
         <div class="form-group">
             <label>

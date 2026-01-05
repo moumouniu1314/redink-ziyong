@@ -21,14 +21,19 @@ class ImageApiGenerator(ImageGeneratorBase):
         self.image_size = config.get('image_size', '4K')
 
         # 支持自定义端点路径
-        endpoint_type = config.get('endpoint_type', '/v1/images/generations')
-        # 兼容旧的简写格式
-        if endpoint_type == 'images':
+        endpoint_type = config.get('endpoint_type')
+        # 如果未配置或为空，使用默认值
+        if endpoint_type is None:
+            endpoint_type = '/v1/images/generations'
+        elif endpoint_type == '':
+            # 空字符串表示不添加路径
+            endpoint_type = ''
+        elif endpoint_type == 'images':
             endpoint_type = '/v1/images/generations'
         elif endpoint_type == 'chat':
             endpoint_type = '/v1/chat/completions'
-        # 确保以 / 开头
-        if not endpoint_type.startswith('/'):
+        elif endpoint_type and not endpoint_type.startswith('/'):
+            # 确保非空路径以 / 开头
             endpoint_type = '/' + endpoint_type
         self.endpoint_type = endpoint_type
 
@@ -110,8 +115,10 @@ class ImageApiGenerator(ImageGeneratorBase):
             "model": model,
             "prompt": prompt,
             "response_format": "b64_json",
-            "aspect_ratio": aspect_ratio,
-            "image_size": self.image_size
+            "imageConfig": {
+                "aspectRatio": aspect_ratio,
+                "imageSize": self.image_size
+            }
         }
 
         # 收集所有参考图片
@@ -165,7 +172,17 @@ class ImageApiGenerator(ImageGeneratorBase):
                 "建议：检查API密钥和base_url配置"
             )
 
-        result = response.json()
+        # 尝试解析 JSON 响应
+        try:
+            result = response.json()
+        except Exception as e:
+            logger.error(f"JSON 解析失败: {e}, 响应内容: {response.text[:500]}")
+            raise Exception(
+                f"API 响应解析失败\n"
+                f"请求地址: {api_url}\n"
+                f"响应内容: {response.text[:500]}\n"
+                "可能原因：API 返回的不是有效 JSON 格式"
+            )
         logger.debug(f"  API 响应: data 长度={len(result.get('data', []))}")
 
         if "data" in result and len(result["data"]) > 0:

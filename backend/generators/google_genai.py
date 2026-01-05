@@ -320,6 +320,10 @@ class GoogleGenAIGenerator(ImageGeneratorBase):
             types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
             types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
         ]
+
+        # 图片尺寸配置
+        self.image_size = config.get('image_size', '2K')
+
         logger.info("GoogleGenAIGenerator 初始化完成")
 
     def validate_config(self) -> bool:
@@ -393,6 +397,7 @@ class GoogleGenAIGenerator(ImageGeneratorBase):
 
         image_config_kwargs = {
             "aspect_ratio": aspect_ratio,
+            "image_size": self.image_size,
         }
 
         # 只有在 Vertex AI 模式下才支持 output_mime_type
